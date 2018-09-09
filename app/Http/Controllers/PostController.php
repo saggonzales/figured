@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Post;
 use Illuminate\Http\Request;
+use App\Http\Requests;
+use App\Post;
+use App\Http\Resources\Post as PostResource;
+
 
 class PostController extends Controller
 {
@@ -14,8 +17,10 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::all();
-        return view('posts.index',compact('posts'))->with('i', (request()->input('page', 1) - 1) * 5);
+        // Get posts
+        $posts = Post::orderBy('created_at', 'desc')->paginate(5);
+        // Return collection of posts as a resource
+        return PostResource::collection($posts);
     }
 
     /**
@@ -25,7 +30,7 @@ class PostController extends Controller
      */
     public function create()
     {
-        return view('posts.create');
+        
     }
 
     /**
@@ -37,16 +42,15 @@ class PostController extends Controller
     public function store(Request $request)
     {
 
-        request()->validate([
-            'title' => 'required',
-            'text' => 'required',
-        ]);
+        $post = $request->isMethod('put') ? Post::findOrFail($request->post_id) : new Post;
 
+        $post->id = $request->input('post_id');
+        $post->title = $request->input('title');
+        $post->text = $request->input('text');
 
-        Post::create($request->all());
-
-        return redirect()->route('posts.index')
-                        ->with('success','Post created successfully.');
+        if($post->save()) {
+            return new PostResource($post);
+        }
 
     }
 
@@ -56,9 +60,14 @@ class PostController extends Controller
      * @param  \App\Post  $post
      * @return \Illuminate\Http\Response
      */
-    public function show(Post $post)
+    public function show($id)
     {
-        return view('posts.show',compact('post'));
+        // Get article
+        $post = Post::findOrFail($id);
+
+        // Return single post as a resource
+        return new PostResource($post);        
+        // return view('posts.show',compact('post'));
     }
 
     /**
@@ -69,7 +78,7 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        return view('posts.edit',compact('post'));
+        // return view('posts.edit',compact('post'));
     }
 
     /**
@@ -82,18 +91,6 @@ class PostController extends Controller
     public function update(Request $request, Post $post)
     {
 
-         request()->validate([
-            'title' => 'required',
-            'text' => 'required',
-        ]);
-
-
-        $post->update($request->all());
-
-
-        return redirect()->route('posts.index')
-                        ->with('success','Post updated successfully');
-
     }
 
     /**
@@ -102,11 +99,14 @@ class PostController extends Controller
      * @param  \App\Post  $post
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Post $post)
+    public function destroy($id)
     {
-        $post->delete();
+        // Get post
+        $post = Post::findOrFail($id);
 
-        return redirect()->route('posts.index')
-                        ->with('success','Post deleted successfully');        
+        if($post->delete()) {
+            return new PostResource($post);
+        }   
+
     }
 }

@@ -14,8 +14,16 @@
                         </div>
                     @endif
 
-                    You are logged in!
+                    <!-- <div class="content"> -->
+                        <div id="app">
+                                <post-component>
+                                    
+                                </post-component>                        
+                        </div>
+                    <!-- </div> -->
+
                 </div>
+                
             </div>
         </div>
     </div>
